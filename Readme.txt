@@ -1,0 +1,37 @@
+-this is a application where you RACE and FLY in 3d world.
+-
+-style is very bad, but with some cleaning and commenting, it can be made manageable.
+-
+-no outside library were used other than java.awt, swing, io.
+-
+-graphics made using java graphics2D
+-
+-
+-
+-FEATURES: 
+-
+-slow Motion (use space to activate),
+-
+-sound
+-
+-keyboard and mouse controls (use m to toggle mouse controls. wasd for keyboard. mouse up/down for accelerate, left/right for turning)
+-
+-flying, use '/' to activate while you are in the air in order to glide down
+-
+-camara follows you nicely
+-
+-easy to make new race tracks
+-
+-cool graphic effect in redrawing (it doesn't erase old screen and then draw new screen, but rather makes screens more and more transparent the older they get)
+-
+-simple particle effect
+-
+-
+-
+-NOT YET IMPLEMENTED
+-
+-opponent AI does not race will
+-
+-some graphic glitches when driving backwards, but nothing that breaks the program
+-
+-
