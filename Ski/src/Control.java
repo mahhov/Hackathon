@@ -8,7 +8,7 @@ public class Control implements MouseMotionListener, KeyListener {
 	double foward;
 	double side;
 	boolean mouseDisabled = false;
-	boolean slowMo;
+	boolean slowMo, fly;
 
 	public void keyPressed(KeyEvent e) {
 		switch (e.getKeyChar()) {
@@ -26,6 +26,9 @@ public class Control implements MouseMotionListener, KeyListener {
 			break;
 		case ' ':
 			slowMo = true;
+			break;
+		case '/':
+			fly = true;
 			break;
 		case 'm':
 			mouseDisabled = !mouseDisabled;
@@ -47,6 +50,9 @@ public class Control implements MouseMotionListener, KeyListener {
 		case 'a':
 		case 'd':
 			side = 0;
+			break;
+		case '/':
+			fly = false;
 			break;
 		case ' ':
 			slowMo = false;

@@ -6,6 +6,7 @@ import java.awt.Polygon;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
@@ -19,6 +20,7 @@ public class Track {
 	// map
 	// register
 	// opponent collision
+	// shooting star
 
 	static final double gravity = .01;
 	Control c;
@@ -30,6 +32,7 @@ public class Track {
 	int backgroundImageSpeed = 3;
 	Clip music;
 	double cameraX, cameraY, cameraZ, cameraA;
+	ArrayList<Particle> particles;
 
 	void beginMusic() {
 		try {
@@ -49,10 +52,12 @@ public class Track {
 	}
 
 	Track() {
+		particles = new ArrayList<Particle>();
+
 		c = new Control();
 		p = new Painter(c);
-		user = new Skier(0, 0, -2, 0.01, true);
-		opponent = new Skier(0, -1, -2, 0.01, false);
+		user = new Skier(0, 0, -2, 0.008, true);
+		opponent = new Skier(0, -1, -2, 0.008, false);
 
 		path = new PathBuilder().trackGood();
 
@@ -152,6 +157,15 @@ public class Track {
 
 	}
 
+	void paintParticles() {
+		for (int i = 0; i < particles.size(); i++) {
+			if (particles.get(i).paint(p.brush, camera())) {
+				particles.remove(i);
+				i--;
+			}
+		}
+	}
+
 	void intersect(double[][] line1, double[][] line2) {
 		for (int i = 0; i < 3; i += 2)
 
@@ -192,12 +206,13 @@ public class Track {
 	void begin() {
 		beginMusic();
 		while (true) {
-			user.ski(c.foward, c.side, c.slowMo);
+			user.ski(c.foward, c.side, c.slowMo, c.fly);
 			opponent.ski(opponent.autoDrive(), c.slowMo);
 
 			paintBackground();
 			paintTrack();
 			paintSkiers();
+			paintParticles();
 			drawText();
 			p.paint(c.slowMo);
 
@@ -223,10 +238,11 @@ public class Track {
 		double angle;
 		double vx, vy, vz;
 		double thrust;
-		double angleZ;
+		double angelZ;
 		int cameraW = 10;
 		Color color;
 		boolean cameraControl;
+		boolean fly;
 
 		Skier(double x, double y, double z, double thrust, boolean human) {
 			this.x = x;
@@ -241,7 +257,9 @@ public class Track {
 				color = new Color(0, 0, 250, 150);// blue
 		}
 
-		void ski(double foward, double side, boolean slowMoB) {
+		void ski(double foward, double side, boolean slowMoB, boolean fly) {
+			this.fly = fly;
+
 			double slowMo = 1;
 			if (slowMoB)
 				slowMo = .3;
@@ -259,18 +277,40 @@ public class Track {
 				System.out.println(pz);
 				pz = z;
 			}
-			if (z >= pz - 1) {
+			if (z >= pz - 1) {// on the ground
+				this.fly = false;// can only fly in the air
+
+				// add particles
+				int cMax = 150;
+				// for (double i = 0; i < foward * slowMo; i += 1) {
+				if (Math.random() < foward / 2) {
+					Color c = (new Color((int) (Math.random() * cMax),
+							(int) (Math.random() * cMax),
+							(int) (Math.random() * cMax)));
+					particles.add(new Particle(x - 2 * Math.cos(angle)
+							+ Math.random() * 1 - .5, y - 2 * Math.sin(angle)
+							+ Math.random() * 1 - .5, z, c));
+				}
+
 				vx -= .02 * vx * slowMo;
 				vy -= .02 * vy * slowMo;
 				double accel = foward * thrust * 2;
-				angleZ = average(angleZ, path[segment].angle(angle), 1);
-				double flatAccel = accel * Math.cos(angleZ);
+				angelZ = average(angelZ, path[segment].angle(angle), 5);
+				double flatAccel = accel * Math.cos(angelZ) + gravity
+						* Math.sin(angelZ);
 				vx += flatAccel * Math.cos(angle) * slowMo;
 				vy += flatAccel * Math.sin(angle) * slowMo;
-				vz += accel * Math.sin(angleZ) * slowMo;
-			} else {
-				angleZ = average(angleZ, -Math.PI / 2, 10);
-				vz += gravity * slowMo;
+				vz += accel * Math.sin(angelZ) * slowMo;
+			} else {// in the air
+				// angelZ = average(angelZ, -Math.PI / 2, 15);
+				if (this.fly) {
+					double flatAccel = foward * thrust;
+					vx += flatAccel * Math.cos(angle) * slowMo;
+					vy += flatAccel * Math.sin(angle) * slowMo;
+
+					vz += gravity * slowMo / 3;
+				} else
+					vz += gravity * slowMo;
 			}
 			vz *= .99;
 
@@ -282,7 +322,7 @@ public class Track {
 				// bounce
 				vz *= -.2;
 			}
-			angle += side * (.01 + 0.1 * Math.sqrt((vx * vx) + (vy * vy)));
+			angle += side * (.01 + 0.05 * Math.sqrt((vx * vx) + (vy * vy)));
 
 			if (path[segment].line.progress(x, y) >= 1.1)
 				segment = (segment + 1) % path.length;
@@ -296,12 +336,14 @@ public class Track {
 			if (pxy != null) {
 				x = pxy[0];
 				y = pxy[1];
+				vx *= .95;
+				vy *= .95;
 			}
 
 		}
 
 		void ski(double[] instructions, boolean slowMoB) {
-			ski(instructions[0], instructions[1], slowMoB);
+			ski(instructions[0], instructions[1], slowMoB, false);
 		}
 
 		double[] autoDrive() {
@@ -331,7 +373,9 @@ public class Track {
 			double backX = x - backD * Math.cos(angle);
 			double backY = y - backD * Math.sin(angle);
 
-			if (new Point(backX, backY, z).origin(camera()).x > .1) {
+			Point backCenter = new Point(backX, backY, z).origin(camera());
+
+			if (backCenter.x > .1) { // don't draw opponents if he's behind you
 
 				double backXT = x - backDT * Math.cos(angle);
 				double backYT = y - backDT * Math.sin(angle);
@@ -344,16 +388,31 @@ public class Track {
 				double backRXT = backXT + dist * Math.cos(angle + Math.PI / 2);
 				double backRYT = backYT + dist * Math.sin(angle + Math.PI / 2);
 
+				// WINGS
+				double fLXW = x - dist * 2 * Math.cos(angle + Math.PI / 2);
+				double fLYW = y - dist * 2 * Math.sin(angle + Math.PI / 2);
+				double fRXW = x + dist * 2 * Math.cos(angle + Math.PI / 2);
+				double fRYW = y + dist * 2 * Math.sin(angle + Math.PI / 2);
+
+				double[] bl = new Point(backLX, backLY, z - backD
+						* Math.sin(angelZ)).origin(camera()).toScreen();
+				double[] br = new Point(backRX, backRY, z - backD
+						* Math.sin(angelZ)).origin(camera()).toScreen();
+				double[] flW = new Point(fLXW, fLYW, z).origin(camera())
+						.toScreen();
+				double[] frW = new Point(fRXW, fRYW, z).origin(camera())
+						.toScreen();
+
 				// BOTTOM
 				double fLX = x - dist * Math.cos(angle + Math.PI / 2);
 				double fLY = y - dist * Math.sin(angle + Math.PI / 2);
 				double fRX = x + dist * Math.cos(angle + Math.PI / 2);
 				double fRY = y + dist * Math.sin(angle + Math.PI / 2);
 
-				double[] bl = new Point(backLX, backLY, z - backD
-						* Math.sin(angleZ)).origin(camera()).toScreen();
-				double[] br = new Point(backRX, backRY, z - backD
-						* Math.sin(angleZ)).origin(camera()).toScreen();
+				// double[] bl = new Point(backLX, backLY, z - backD
+				// * Math.sin(angelZ)).origin(camera()).toScreen();
+				// double[] br = new Point(backRX, backRY, z - backD
+				// * Math.sin(angelZ)).origin(camera()).toScreen();
 				double[] fl = new Point(fLX, fLY, z).origin(camera())
 						.toScreen();
 				double[] fr = new Point(fRX, fRY, z).origin(camera())
@@ -362,9 +421,9 @@ public class Track {
 				// TOP
 				double top = -.5;
 				double[] blT = new Point(backLXT, backLYT, z - backDT
-						* Math.sin(angleZ) + top).origin(camera()).toScreen();
+						* Math.sin(angelZ) + top).origin(camera()).toScreen();
 				double[] brT = new Point(backRXT, backRYT, z - backDT
-						* Math.sin(angleZ) + top).origin(camera()).toScreen();
+						* Math.sin(angelZ) + top).origin(camera()).toScreen();
 				double[] flT = new Point(fLX, fLY, z + top).origin(camera())
 						.toScreen();
 				double[] frT = new Point(fRX, fRY, z + top).origin(camera())
@@ -373,14 +432,15 @@ public class Track {
 				// SHADOW
 				double groundZ = path[segment].getZ(this.x, this.y);
 				double[] blS = new Point(backLX, backLY, groundZ - backD
-						* Math.sin(angleZ)).origin(camera()).toScreen();
+						* Math.sin(angelZ)).origin(camera()).toScreen();
 				double[] brS = new Point(backRX, backRY, groundZ - backD
-						* Math.sin(angleZ)).origin(camera()).toScreen();
+						* Math.sin(angelZ)).origin(camera()).toScreen();
 				double[] flS = new Point(fLX, fLY, groundZ).origin(camera())
 						.toScreen();
 				double[] frS = new Point(fRX, fRY, groundZ).origin(camera())
 						.toScreen();
 
+				// shadow
 				int[] xS = new int[] { (int) blS[0], (int) brS[0],
 						(int) frS[0], (int) flS[0] };
 				int[] yS = new int[] { (int) blS[1], (int) brS[1],
@@ -388,6 +448,17 @@ public class Track {
 				g.setColor(new Color(0, 0, 0, 100));
 				g.fillPolygon(new Polygon(xS, yS, 4));
 
+				// wing
+				if (fly) {
+					int[] xW = new int[] { (int) bl[0], (int) br[0],
+							(int) frW[0], (int) flW[0] };
+					int[] yW = new int[] { (int) bl[1], (int) br[1],
+							(int) frW[1], (int) flW[1] };
+					g.setColor(new Color(255, 245, 238, 150));
+					g.fillPolygon(new Polygon(xW, yW, 4));
+				}
+
+				// bottom
 				int[] x = new int[] { (int) bl[0], (int) br[0], (int) fr[0],
 						(int) fl[0] };
 				int[] y = new int[] { (int) bl[1], (int) br[1], (int) fr[1],
@@ -395,6 +466,7 @@ public class Track {
 				g.setColor(color);
 				g.fillPolygon(new Polygon(x, y, 4));
 
+				// top
 				int[] xT = new int[] { (int) blT[0], (int) brT[0],
 						(int) frT[0], (int) flT[0] };
 				int[] yT = new int[] { (int) blT[1], (int) brT[1],

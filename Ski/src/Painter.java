@@ -42,7 +42,7 @@ public class Painter extends JFrame {
 
 			// fade
 			if (slowMo) {
-				brush.setColor(new Color(0f, 0f, 0f, 0.05f));
+				brush.setColor(new Color(0f, 0f, 0f, 0.02f));
 			} else
 				brush.setColor(new Color(0f, 0f, 0f, 0.1f));
 			brush.fillRect(0, 0, getWidth(), getHeight());

@@ -31,7 +31,7 @@ public class PathBuilder {
 			double dx = r * Math.cos(startAngle);
 			double dy = r * Math.sin(startAngle);
 			startAngle += dtheta;
-			n = new double[] { last[0] + dx, last[1] + dy, last[2] + dz };
+			n = new double[] { last[0] + dx, last[1] + dy, last[2] + dz * i };
 			points.add(n);
 			last = n;
 		}
@@ -76,7 +76,7 @@ public class PathBuilder {
 
 	Path[] trackSpiral() {
 		add(0, 0, 0);
-		arcMove(3, 0, Math.PI * 1.7, -10, 10);
+		arcMove(3, 0, Math.PI * 1.7, -2, 10);
 		return buildPath();
 	}
 
@@ -91,8 +91,10 @@ public class PathBuilder {
 		add(-5, 0, 0);
 		move(30, 0, 0);
 		arcMove(5, 0, a90, -7, 10);
+		printLast();
 		move(0, 10, 0);
 		arcMove(5, a90, a90, 7, 10);
+		printLast();
 		move(-5, 0, 0);
 		move(-4, 0, -10);
 		move(-2, 0, 0);
