@@ -1,4 +1,7 @@
 Quick 24hr hackathon project
+~march 2013
+
+https://youtu.be/VchWXQwkSg4
 
 -this is a application where you RACE and FLY in 3d world.  
 -no outside library were used other than java.awt, swing, io.  
