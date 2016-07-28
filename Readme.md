@@ -3,7 +3,7 @@
 
 https://youtu.be/VchWXQwkSg4
 
--this is a application where you RACE and FLY in 3d world.  
+-this is a application where you race and fly in a 3d world.  
 -no outside library were used other than java.awt, swing, io.  
 -graphics made using java graphics2D (3d world -> 2d projection was done by me)  
 
