@@ -1,11 +1,9 @@
--this is a application where you RACE and FLY in 3d world.
--
--style is very bad, but with some cleaning and commenting, it can be made manageable.
--
--no outside library were used other than java.awt, swing, io.
--
--graphics made using java graphics2D
--
+Quick 24hr hackathon project
+
+-this is a application where you RACE and FLY in 3d world.  
+-style is very bad, but with some cleaning and commenting, it can be made manageable.  
+-no outside library were used other than java.awt, swing, io.  
+-graphics made using java graphics2D (3d world -> 2d projection was done by me)
 -
 -
 -FEATURES: 
